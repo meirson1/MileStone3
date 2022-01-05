@@ -59,8 +59,8 @@ public class SimpleAnomalyDetector implements TimeSeriesAnomalyDetector {
 			Line line=StatLib.linear_reg(f1,f2);
 			float threshold=this.CheckMaxThreshold(line,f1,f2);
 			if (threshold>c.threshold) {
-				long timestep=reverseThreshold(threshold,line,f1,f2);
-				AnomalyReport an = new AnomalyReport(c.feature1+"-"+c.feature2, timestep);
+				long timeStep=reverseThreshold(threshold,line,f1,f2);
+				AnomalyReport an = new AnomalyReport(c.feature1+"-"+c.feature2, timeStep);
 				ListAn.add(an);
 			}
 		}

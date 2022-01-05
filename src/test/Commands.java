@@ -3,7 +3,6 @@ package test;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Commands {
@@ -30,21 +29,23 @@ public class Commands {
 	
 	// the shared state of all commands
 	private class SharedState{
-		int sharedstate;
-		public SharedState(){
-			this.sharedstate=0;
+		//imp milestone 2
+		TimeSeries ts;//send train cvs file to time series
+		SimpleAnomalyDetector ad;
+
+		private void ts(String csvFileName){
+			ts=new TimeSeries(csvFileName);
 		}
 
-		public int getSharedstate() {
-			return sharedstate;
-		}
-
-		public void setSharedstate() {
-			this.sharedstate++;
+		private List<CorrelatedFeatures> ad(){
+			ad=new SimpleAnomalyDetector();
+			ad.learnNormal(ts);
+			List<CorrelatedFeatures> cf=ad.getNormalModel();
+			return cf;
 		}
 	}
 	
-	private  SharedState sharedState=new SharedState();
+	private  SharedState sharedState=new SharedState();//data member
 
 	
 	// Command abstract class
@@ -71,28 +72,86 @@ public class Commands {
 		}		
 	}
 	
-	// implement here all other commands
+	// implement here all others commands
 
 	public class UploadCsvFile extends Command{
 
 		public UploadCsvFile() {
 			super("Please upload your local train CSV file.\n");
-			try {
-				PrintWriter train = new PrintWriter(new FileWriter("trainFile.cvs"));//create train cvs file
-				dio.readText();//read from A to done
-				TimeSeries ts = new TimeSeries("input.txt");//send train cvs file to time series
-				dio.write("Upload complete.\n" + "Please upload your local test CSV file.\n");
-				//read again from A to done
-				PrintWriter test = new PrintWriter(new FileWriter("tesFile.cvs"));//create test cvs file
-				//sent it to TS
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 
 		@Override
 		public void execute() {
 			dio.write(description);
+			try {
+				PrintWriter train = new PrintWriter(new FileWriter("trainFile.csv"));//create train cvs file
+				String line;
+				dio.readText();
+				while (!((line=dio.readText()).equals("done"))) {
+					train.println(line);//read from A to done
+				}
+				train.close();
+				dio.write("Upload complete.\n" + "Please upload your local test CSV file.\n");
+				PrintWriter test = new PrintWriter(new FileWriter("tesFile.csv"));//create test cvs file
+				while (!((line=dio.readText()).equals("done"))) {
+					test.println(line);//read from A to done
+				}
+				test.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public class AlgorithmSettings extends Command{
+
+		public AlgorithmSettings() {
+			super("The current correlation threshold is");
+		}
+
+		@Override
+		public void execute() {
+			sharedState.ts("trainFile.csv");
+			List<CorrelatedFeatures> cf=sharedState.ad();
+			for (CorrelatedFeatures c:cf) {
+				//dio.write(c.);
+			}
+		}
+	}
+
+	public class DetectAnomalies extends Command{
+
+		public DetectAnomalies() {
+			super("anomaly detection complete.");
+		}
+
+		@Override
+		public void execute() {
+
+		}
+	}
+
+	public class DisplayResults extends Command{
+
+		public DisplayResults() {
+			super("display results");
+		}
+
+		@Override
+		public void execute() {
+
+		}
+	}
+
+	public class UploadAAResults extends Command{
+
+		public UploadAAResults() {
+			super("upload anomalies and analyze results");
+		}
+
+		@Override
+		public void execute() {
+
 		}
 	}
 	

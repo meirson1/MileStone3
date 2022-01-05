@@ -19,10 +19,14 @@ public class CLI {
 		// example: commands.add(c.new ExampleCommand());
 		// implement
 		commands.add(c.new UploadCsvFile());
+		commands.add(c.new AlgorithmSettings());
+		commands.add(c.new DetectAnomalies());
+		commands.add(c.new DisplayResults());
+		commands.add(c.new UploadAAResults());
 	}
 	
 	public void start() {
-		boolean exit=false;
+		boolean exit=false;//:D
 
 		while (!exit){
 			dio.write("Welcome to the Anomaly Detection Server.\n" +
@@ -36,15 +40,19 @@ public class CLI {
 			int choice= (int) dio.readVal();
 			switch (choice) {
 				case 1:
-					commands.add(c.new UploadCsvFile());
+					commands.get(0).execute();
 					break;
 				case 2:
+					commands.get(1).execute();
 					break;
 				case 3:
+					commands.get(2).execute();
 					break;
 				case 4:
+					commands.get(3).execute();
 					break;
 				case 5:
+					commands.get(4).execute();
 					break;
 				case 6:
 					exit=true;
