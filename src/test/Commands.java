@@ -3,10 +3,11 @@ package test;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Commands {
-	
+
 	// Default IO interface
 	public interface DefaultIO{
 		public String readText();
@@ -16,17 +17,17 @@ public class Commands {
 
 		// you may add default methods here
 	}
-	
+
 	// the default IO to be used in all commands
 	DefaultIO dio;
 	public Commands(DefaultIO dio) {
 		this.dio=dio;
 	}
-	
+
 	// you may add other helper classes here
-	
-	
-	
+
+
+
 	// the shared state of all commands
 	private class SharedState{
 		//imp milestone 2
@@ -52,21 +53,21 @@ public class Commands {
 			reports=ad.detect(tsTest);
 		}
 	}
-	
+
 	private  SharedState sharedState=new SharedState();//data member
 
-	
+
 	// Command abstract class
 	public abstract class Command{
 		protected String description;
-		
+
 		public Command(String description) {
 			this.description=description;
 		}
-		
+
 		public abstract void execute();
 	}
-	
+
 	// Command class for example:
 	public class ExampleCommand extends Command{
 
@@ -77,9 +78,9 @@ public class Commands {
 		@Override
 		public void execute() {
 			dio.write(description);
-		}		
+		}
 	}
-	
+
 	// implement here all others commands
 
 	public class UploadCsvFile extends Command{
@@ -105,6 +106,7 @@ public class Commands {
 					test.println(line);//read from A to done
 				}
 				test.close();
+				dio.write("Upload complete.\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -140,6 +142,7 @@ public class Commands {
 		@Override
 		public void execute() {
 			sharedState.ad("testFile.csv");
+
 			dio.write(description);
 		}
 	}
@@ -147,30 +150,65 @@ public class Commands {
 	public class DisplayResults extends Command{
 
 		public DisplayResults() {
-			super("done");
+			super("Done.\n");
 		}
 
 		@Override
 		public void execute() {
 			for (AnomalyReport ar:sharedState.reports) {
-				dio.write(ar.description+ar.timeStep);
+				dio.write(ar.timeStep+" "+ar.description+"\n");
 			}
-			dio.write(description);
 
+			dio.write(description);
 		}
 	}
 
 	public class UploadAAResults extends Command{
 
 		public UploadAAResults() {
-			super("upload anomalies and analyze results");
+			super("Please upload your local anomalies file.\n");
+		}
+
+		private class Pair {
+			int FromLine;
+			int ToLine;
+
+			public Pair(int fromLine, int toLine) {
+				FromLine = fromLine;
+				ToLine = toLine;
+			}
+
+			public int getFromLine() {
+				return FromLine;
+			}
+
+			public void setFromLine(int fromLine) {
+				FromLine = fromLine;
+			}
+
+			public int getToLine() {
+				return ToLine;
+			}
+
+			public void setToLine(int toLine) {
+				ToLine = toLine;
+			}
 		}
 
 		@Override
 		public void execute() {
 			dio.write(description);
+			String line;
+			List<String[]> SE=new ArrayList<>();
+			while (!((line=dio.readText()).equals("done"))) {
+				SE.add(line.split(","));
 
+			}
+			dio.write("Upload complete.\n");
+			dio.write("True Positive Rate: "+"\n");
+			dio.write("False Positive Rate: "+"\n");
 		}
 	}
-	
+
+
 }
