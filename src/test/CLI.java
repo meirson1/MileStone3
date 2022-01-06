@@ -26,8 +26,8 @@ public class CLI {
 	}
 	
 	public void start() {
-		boolean exit=false;//:D
-
+		boolean exit=false;
+		int choice=0;
 		while (!exit){
 			dio.write("Welcome to the Anomaly Detection Server.\n" +
 					"Please choose an option:\n" +
@@ -37,7 +37,10 @@ public class CLI {
 					"4. display results\n" +
 					"5. upload anomalies and analyze results\n" +
 					"6. exit\n");
-			int choice= (int) dio.readVal();
+			do {
+				choice=(int) dio.readVal();
+			}while (choice>6||choice<1);
+
 			switch (choice) {
 				case 1:
 					commands.get(0).execute();

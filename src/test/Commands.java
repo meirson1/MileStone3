@@ -30,18 +30,26 @@ public class Commands {
 	// the shared state of all commands
 	private class SharedState{
 		//imp milestone 2
-		TimeSeries ts;//send train cvs file to time series
+		TimeSeries tsTrain;//send train cvs file to time series
+		TimeSeries tsTest;//send test cvs file to time series
 		SimpleAnomalyDetector ad;
+		List<AnomalyReport> reports;
 
-		private void ts(String csvFileName){
-			ts=new TimeSeries(csvFileName);
+		private void tsTrain(String csvFileName){
+			tsTrain=new TimeSeries(csvFileName);
+		}
+		private void tsTest(String csvFileName){
+			tsTest=new TimeSeries(csvFileName);
 		}
 
-		private List<CorrelatedFeatures> ad(){
+		private void adThresh(){
 			ad=new SimpleAnomalyDetector();
-			ad.learnNormal(ts);
-			List<CorrelatedFeatures> cf=ad.getNormalModel();
-			return cf;
+			ad.learnNormal(tsTrain);
+		}
+
+		private void ad(String csvFileName){
+			tsTest(csvFileName);
+			reports=ad.detect(tsTest);
 		}
 	}
 	
@@ -92,7 +100,7 @@ public class Commands {
 				}
 				train.close();
 				dio.write("Upload complete.\n" + "Please upload your local test CSV file.\n");
-				PrintWriter test = new PrintWriter(new FileWriter("tesFile.csv"));//create test cvs file
+				PrintWriter test = new PrintWriter(new FileWriter("testFile.csv"));//create test cvs file
 				while (!((line=dio.readText()).equals("done"))) {
 					test.println(line);//read from A to done
 				}
@@ -106,39 +114,48 @@ public class Commands {
 	public class AlgorithmSettings extends Command{
 
 		public AlgorithmSettings() {
-			super("The current correlation threshold is");
+			super("The current correlation threshold is ");
 		}
 
 		@Override
 		public void execute() {
-			sharedState.ts("trainFile.csv");
-			List<CorrelatedFeatures> cf=sharedState.ad();
-			for (CorrelatedFeatures c:cf) {
-				//dio.write(c.);
-			}
+			sharedState.tsTrain("trainFile.csv");
+			sharedState.adThresh();
+			dio.write(description+sharedState.ad.geThreshold()+"\n");
+			dio.write("Type a new threshold\n");
+			float threshold=0;
+			do {
+				threshold=dio.readVal();
+			}while (threshold<0||threshold>1);
+			sharedState.ad.seThreshold(threshold);
 		}
 	}
 
 	public class DetectAnomalies extends Command{
 
 		public DetectAnomalies() {
-			super("anomaly detection complete.");
+			super("anomaly detection complete.\n");
 		}
 
 		@Override
 		public void execute() {
-
+			sharedState.ad("testFile.csv");
+			dio.write(description);
 		}
 	}
 
 	public class DisplayResults extends Command{
 
 		public DisplayResults() {
-			super("display results");
+			super("done");
 		}
 
 		@Override
 		public void execute() {
+			for (AnomalyReport ar:sharedState.reports) {
+				dio.write(ar.description+ar.timeStep);
+			}
+			dio.write(description);
 
 		}
 	}
@@ -151,6 +168,7 @@ public class Commands {
 
 		@Override
 		public void execute() {
+			dio.write(description);
 
 		}
 	}

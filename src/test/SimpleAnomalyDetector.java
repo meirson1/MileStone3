@@ -4,13 +4,21 @@ import java.util.List;
 public class SimpleAnomalyDetector implements TimeSeriesAnomalyDetector {
 
 	List<CorrelatedFeatures> CF=new ArrayList<CorrelatedFeatures>();
+	float threshold=0.9f;
+
+	public void seThreshold(float thresh){
+		this.threshold=thresh;
+	}
+	public float geThreshold(){
+		return this.threshold;
+	}
 
 	@Override
 	public void learnNormal(TimeSeries ts) {
 		float SendPearsonCorrelated;
 		CorrelatedFeatures c=null;
 		for (int i = 1; i <= ts.HM.size(); i++) {
-			SendPearsonCorrelated=0.9f;
+			SendPearsonCorrelated=geThreshold();
 			for (int j = i + 1; j <= ts.HM.size(); j++) {
 				float[] f1=new float[ts.HM.get(String.valueOf((char) (i+64))).size()];
 				float[] f2=new float[ts.HM.get(String.valueOf((char) (i+64))).size()];
@@ -22,7 +30,7 @@ public class SimpleAnomalyDetector implements TimeSeriesAnomalyDetector {
 				if (Math.abs(StatLib.pearson(f1,f2)) >SendPearsonCorrelated) {
 					SendPearsonCorrelated = Math.abs(StatLib.pearson(f1,f2));
 					Line line=StatLib.linear_reg(f1,f2);
-					float MaxThreshold=this.CheckMaxThreshold(line,f1,f2)*(float)1.1;
+					float MaxThreshold=this.CheckMaxThreshold(line,f1,f2)*(float)1.1;//10%
 					c=new CorrelatedFeatures(String.valueOf((char)(i+64)),String.valueOf((char)(j+64)),SendPearsonCorrelated,line,MaxThreshold);
 				}
 
