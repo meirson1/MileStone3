@@ -1,10 +1,10 @@
 package test;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 public class Commands {
 
@@ -169,46 +169,55 @@ public class Commands {
 			super("Please upload your local anomalies file.\n");
 		}
 
-		private class Pair {
-			int FromLine;
-			int ToLine;
-
-			public Pair(int fromLine, int toLine) {
-				FromLine = fromLine;
-				ToLine = toLine;
-			}
-
-			public int getFromLine() {
-				return FromLine;
-			}
-
-			public void setFromLine(int fromLine) {
-				FromLine = fromLine;
-			}
-
-			public int getToLine() {
-				return ToLine;
-			}
-
-			public void setToLine(int toLine) {
-				ToLine = toLine;
-			}
-		}
-
 		@Override
 		public void execute() {
 			dio.write(description);
+			List<List<String>> SE=new ArrayList<>();
 			String line;
-			List<String[]> SE=new ArrayList<>();
-			while (!((line=dio.readText()).equals("done"))) {
-				SE.add(line.split(","));
 
+			dio.readText();
+			while (!((line=dio.readText()).equals("done"))){
+				String[] values = line.split(",");
+				SE.add(Arrays.asList(values));
 			}
+
+			float P= SE.size();
+			float N=sharedState.tsTrain.getRowSize();
+			float FP=0;
+			float TP=0;
+			List<Float> time=new ArrayList<>();
+
+			for (int i = 0; i < SE.size(); i++) {
+				for (int j = 0; j < SE.get(i).size()-1; j++) {
+					time.add(Float.parseFloat(SE.get(i).get(j+1))-Float.parseFloat(SE.get(i).get(j))+1);
+					N-=time.get(j);
+				}
+			}
+
+			for (int i = 0; i < SE.size(); i++) {
+				float setter=0;
+				boolean flag = false;
+				for (int j = 0; j < time.get(i); j++) {
+					for (AnomalyReport ar : sharedState.reports) {
+						if (ar.timeStep == (j + (Float.parseFloat(SE.get(i).get(0))))) {//calc TP
+							flag = true;
+							setter++;
+						}
+					}
+				}
+				if (flag) {
+					N+=setter;
+					TP++;
+				}
+				else
+					FP++;
+			}
+
+			float TruePositiveRate=(TP/P);//TruePositiveRate
+			float FalseAlarmRate=(FP/N);//FalseAlarmRate
 			dio.write("Upload complete.\n");
-			dio.write("True Positive Rate: "+"\n");
-			dio.write("False Positive Rate: "+"\n");
+			dio.write("True Positive Rate: "+(TruePositiveRate)+"\n");
+			dio.write("False Positive Rate: "+FalseAlarmRate+"\n");
 		}
 	}
-
-
 }

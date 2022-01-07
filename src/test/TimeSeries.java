@@ -10,6 +10,11 @@ import java.util.*;
 public class TimeSeries {
 
 	HashMap<String, ArrayList<Float>> HM= new HashMap <String, ArrayList<Float>>();
+	int dataRowSize;
+
+	public int getRowSize() {
+		return dataRowSize;
+	}
 
 	public TimeSeries(String csvFileName) {
 		int i;
@@ -28,6 +33,7 @@ public class TimeSeries {
 					HM.get(check[i]).add(Float.parseFloat(row[i]));//put in every array(abcd) value
 				}
 			}
+			dataRowSize=HM.get(0).size();
 		}
 		catch (FileNotFoundException e){
 			e.printStackTrace();
