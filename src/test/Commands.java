@@ -1,6 +1,8 @@
 package test;
 
 import java.io.*;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -163,61 +165,109 @@ public class Commands {
 		}
 	}
 
-	public class UploadAAResults extends Command{
+	public class UploadAAResults extends Command {
 
 		public UploadAAResults() {
 			super("Please upload your local anomalies file.\n");
 		}
 
+		private class Pair {
+
+			int start;
+			int end;
+
+			public Pair(int start, int end) {
+				this.start = start;
+				this.end = end;
+			}
+
+			public int getStart() {
+				return start;
+			}
+
+			public void setStart(int start) {
+				this.start = start;
+			}
+
+			public int getEnd() {
+				return end;
+			}
+
+			public void setEnd(int end) {
+				this.end = end;
+			}
+		}
+
 		@Override
 		public void execute() {
 			dio.write(description);
-			List<List<String>> SE=new ArrayList<>();
+			List<List<String>> SE = new ArrayList<>();
 			String line;
 
 			dio.readText();
-			while (!((line=dio.readText()).equals("done"))){
+			while (!((line = dio.readText()).equals("done"))) {
 				String[] values = line.split(",");
 				SE.add(Arrays.asList(values));
 			}
 
-			float P= SE.size();
-			float N=sharedState.tsTrain.getRowSize();
-			float FP=0;
-			float TP=0;
-			List<Float> time=new ArrayList<>();
+			float P = SE.size();
+			float N = sharedState.tsTrain.getRowSize();
+			float FP = 0;
+			float TP = 0;
+			List<Float> time = new ArrayList<>();
 
 			for (int i = 0; i < SE.size(); i++) {
-				for (int j = 0; j < SE.get(i).size()-1; j++) {
-					time.add(Float.parseFloat(SE.get(i).get(j+1))-Float.parseFloat(SE.get(i).get(j))+1);
-					N-=time.get(j);
+				for (int j = 0; j < SE.get(i).size() - 1; j++) {
+					time.add(Float.parseFloat(SE.get(i).get(j + 1)) - Float.parseFloat(SE.get(i).get(j)) + 1);
 				}
 			}
 
-			for (int i = 0; i < SE.size(); i++) {
-				float setter=0;
+			String des = sharedState.reports.get(0).description;
+			List<Pair> Par = new ArrayList<>();
+			Pair p = new Pair((int) sharedState.reports.get(0).timeStep, 0);
+
+			for (int i = 0; i < sharedState.reports.size() - 1; i++) {//group by description of anomaly reports
+				if ((des.equals(sharedState.reports.get(i).description)) && (!des.equals(sharedState.reports.get(i + 1).description))) {
+					p.setEnd((int) sharedState.reports.get(i).timeStep);
+					Par.add(p);
+					p = new Pair((int) sharedState.reports.get(i + 1).timeStep, 0);
+					if (!(sharedState.reports.get(i + 1).equals(null)))
+						des = sharedState.reports.get(i + 1).description;
+				} else if (i == sharedState.reports.size() - 2) {
+					p.setEnd((int) sharedState.reports.get(i + 1).timeStep);
+					Par.add(p);
+				}
+			}
+
+			for (int i = 0; i <Par.size(); i++) {
+				N-=(Par.get(i).getEnd()-Par.get(i).getStart()+1);
+			}
+
+			for (Pair pa : Par) {
 				boolean flag = false;
-				for (int j = 0; j < time.get(i); j++) {
-					for (AnomalyReport ar : sharedState.reports) {
-						if (ar.timeStep == (j + (Float.parseFloat(SE.get(i).get(0))))) {//calc TP
-							flag = true;
-							setter++;
-						}
+				for (int i = 0; i < SE.size(); i++) {
+					if (((pa.getStart() > (Float.parseFloat(SE.get(i).get(0)))) && (pa.getStart() > (Float.parseFloat(SE.get(i).get(1))))) && ((pa.getEnd() > (Float.parseFloat(SE.get(i).get(0)))) && (pa.getEnd() > (Float.parseFloat(SE.get(i).get(1))))))//calc TP FP
+						flag = false;
+					else {
+						TP++;
+						flag = true;
+						break;
 					}
 				}
-				if (flag) {
-					N+=setter;
-					TP++;
-				}
-				else
+				if (!flag) {
 					FP++;
+				}
 			}
 
-			float TruePositiveRate=(TP/P);//TruePositiveRate
-			float FalseAlarmRate=(FP/N);//FalseAlarmRate
+			float TruePositiveRate = (TP / P);//TruePositiveRate
+			float FalseAlarmRate = (FP / N);//FalseAlarmRate
+			DecimalFormat df = new DecimalFormat("#0.0");
+			df.setMaximumFractionDigits(3);
+			df.setRoundingMode(RoundingMode.DOWN);
+
 			dio.write("Upload complete.\n");
-			dio.write("True Positive Rate: "+(TruePositiveRate)+"\n");
-			dio.write("False Positive Rate: "+FalseAlarmRate+"\n");
+			dio.write("True Positive Rate: " + df.format(TruePositiveRate) + "\n");
+			dio.write("False Positive Rate: " + df.format(FalseAlarmRate) + "\n");
 		}
 	}
 }

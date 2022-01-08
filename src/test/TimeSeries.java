@@ -33,7 +33,7 @@ public class TimeSeries {
 					HM.get(check[i]).add(Float.parseFloat(row[i]));//put in every array(abcd) value
 				}
 			}
-			dataRowSize=HM.get(0).size();
+			dataRowSize=HM.get(String.valueOf((char) 65)).size();
 		}
 		catch (FileNotFoundException e){
 			e.printStackTrace();
